@@ -1,15 +1,16 @@
 ﻿using System;
-using Microsoft.JSInterop;
+using System.Text.Json;
 
 namespace BlazorRedux
 {
     public class ReduxOptions<TState>
     {
+
         public ReduxOptions()
         {
             // Defaults
-            StateSerializer = state => Json.Serialize(state);
-            StateDeserializer = Json.Deserialize<TState>;
+            StateSerializer = state => JsonSerializer.Serialize(state);
+            StateDeserializer = content => JsonSerializer.Deserialize<TState>(content);
         }
 
         public Reducer<TState, NewLocationAction> LocationReducer { get; set; }

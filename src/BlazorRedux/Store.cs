@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Blazor.Services;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
+
 
 namespace BlazorRedux
 {
@@ -9,6 +11,7 @@ namespace BlazorRedux
         private readonly TState _initialState;
         private readonly Reducer<TState, TAction> _rootReducer;
         private readonly ReduxOptions<TState> _options;
+        private readonly DevToolsInterop _devToolsInterop;
         private IUriHelper _uriHelper;
         private string _currentLocation;
         private bool _timeTraveling;
@@ -18,17 +21,18 @@ namespace BlazorRedux
         public IList<HistoricEntry<TState, object>> History { get; }
         public event EventHandler Change;
 
-        public Store(TState initialState, Reducer<TState, TAction> rootReducer, ReduxOptions<TState> options)
+        public Store(TState initialState, Reducer<TState, TAction> rootReducer, ReduxOptions<TState> options, DevToolsInterop devToolsInterop)
         {
             _initialState = initialState;
             _rootReducer = rootReducer;
             _options = options;
+            _devToolsInterop = devToolsInterop;
 
             State = initialState;
 
-            DevToolsInterop.Reset += OnDevToolsReset;
-            DevToolsInterop.TimeTravel += OnDevToolsTimeTravel;
-            DevToolsInterop.Log("initial", _options.StateSerializer(State));
+            _devToolsInterop.Reset += OnDevToolsReset;
+            _devToolsInterop.TimeTravel += OnDevToolsTimeTravel;
+            _devToolsInterop.Log("initial", _options.StateSerializer(State));
 
             History = new List<HistoricEntry<TState, object>>
             {
@@ -57,12 +61,14 @@ namespace BlazorRedux
             if (_uriHelper != null)
                 _uriHelper.OnLocationChanged -= OnLocationChanged;
             
-            DevToolsInterop.Reset -= OnDevToolsReset;
-            DevToolsInterop.TimeTravel -= OnDevToolsTimeTravel;
+            _devToolsInterop.Reset -= OnDevToolsReset;
+            _devToolsInterop.TimeTravel -= OnDevToolsTimeTravel;
         }
 
-        private void OnLocationChanged(object sender, string newAbsoluteUri)
+        private void OnLocationChanged(object sender, LocationChangedEventArgs e)
         {
+
+            var newAbsoluteUri = e.Location;
             if (_timeTraveling) return;
             if (newAbsoluteUri == _currentLocation) return;
 
@@ -111,7 +117,7 @@ namespace BlazorRedux
             lock (_syncRoot)
             {
                 State = _rootReducer(State, action);
-                DevToolsInterop.Log(action.ToString(), _options.StateSerializer(State));
+                _devToolsInterop.Log(action.ToString(), _options.StateSerializer(State));
                 History.Add(new HistoricEntry<TState, object>(State, action));
             }
 
@@ -134,7 +140,7 @@ namespace BlazorRedux
             lock (_syncRoot)
             {
                 State = locationReducer(State, locationAction);
-                DevToolsInterop.Log(locationAction.ToString(), _options.StateSerializer(State));
+                _devToolsInterop.Log(locationAction.ToString(), _options.StateSerializer(State));
                 History.Add(new HistoricEntry<TState, object>(State, locationAction));
             }
 
