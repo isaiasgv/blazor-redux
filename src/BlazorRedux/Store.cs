@@ -96,6 +96,7 @@ namespace BlazorRedux
 
         private void OnChange(EventArgs e)
         {
+            if (Change == null) return;
             var handler = Change;
             handler?.Invoke(this, e);
 
@@ -108,7 +109,7 @@ namespace BlazorRedux
             {
                 _currentLocation = newLocation;
             }
-
+          
             _uriHelper.NavigateTo(newLocation);
         }
 

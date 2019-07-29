@@ -32,7 +32,7 @@ namespace BlazorRedux
 
         private void OnChangeHandler(object sender, EventArgs e)
         {
-            StateHasChanged();
+            base.Invoke(StateHasChanged);
         }
 
         public void Dispatch(TAction action)
